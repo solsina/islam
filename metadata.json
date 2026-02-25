@@ -1,0 +1,5 @@
+{
+  "name": "Emerald Islam",
+  "description": "Apprentissage du Tajwid et spiritualité islamique",
+  "requestFramePermissions": ["microphone"]
+}

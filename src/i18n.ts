@@ -1,0 +1,153 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+const resources = {
+  Français: {
+    translation: {
+      "settings": "Paramètres",
+      "location": "Localisation",
+      "current_city": "Ville actuelle",
+      "search_city": "Rechercher une ville (ex: Tokyo, Dakar)...",
+      "auto_location": "Localisation automatique",
+      "fetching_location": "Recherche en cours...",
+      "calculation_method": "Méthode de calcul",
+      "convention": "Convention",
+      "asr_method": "Méthode Asr",
+      "notifications": "Notifications",
+      "adhan_alerts": "Alertes Adhan",
+      "sound": "Sonnerie",
+      "appearance": "Apparence",
+      "dark_mode": "Mode Sombre",
+      "language": "Langue",
+      "home": "Accueil",
+      "next_prayer": "Prochaine Prière",
+      "todays_prayers": "Horaires d'aujourd'hui",
+      "services": "Services",
+      "quran": "Coran",
+      "qibla": "Qibla",
+      "mosques": "Mosquées",
+      "fasting": "Jeûne",
+      "calendar": "Calendrier",
+      "zakat": "Zakat",
+      "duas": "Douas",
+      "hadith": "Hadith",
+      "qada": "Qada",
+      "tajwid": "Tajwid",
+      "help": "Aide",
+      "read_listen": "Lire et écouter",
+      "precise_compass": "Boussole précise",
+      "nearby": "À proximité",
+      "imsak_iftar": "Suivi Imsak/Iftar",
+      "mecca_direction": "Direction de la Mecque",
+      "distance_from": "km depuis",
+      "compass_access": "Accès à la boussole",
+      "compass_desc": "Pour indiquer la direction de la Qibla, nous avons besoin d'accéder aux capteurs de votre appareil.",
+      "allow_access": "Autoriser l'accès",
+      "metal_warning": "Éloignez-vous des objets métalliques pour plus de précision.",
+      "kaaba_mecca": "Kaaba, La Mecque"
+    }
+  },
+  English: {
+    translation: {
+      "settings": "Settings",
+      "location": "Location",
+      "current_city": "Current City",
+      "search_city": "Search city (e.g., Tokyo, Dakar)...",
+      "auto_location": "Auto Location",
+      "fetching_location": "Fetching...",
+      "calculation_method": "Calculation Method",
+      "convention": "Convention",
+      "asr_method": "Asr Method",
+      "notifications": "Notifications",
+      "adhan_alerts": "Adhan Alerts",
+      "sound": "Sound",
+      "appearance": "Appearance",
+      "dark_mode": "Dark Mode",
+      "language": "Language",
+      "home": "Home",
+      "next_prayer": "Next Prayer",
+      "todays_prayers": "Today's Prayers",
+      "services": "Services",
+      "quran": "Quran",
+      "qibla": "Qibla",
+      "mosques": "Mosques",
+      "fasting": "Fasting",
+      "calendar": "Calendar",
+      "zakat": "Zakat",
+      "duas": "Duas",
+      "hadith": "Hadith",
+      "qada": "Qada",
+      "tajwid": "Tajwid",
+      "help": "Help",
+      "read_listen": "Read & Listen",
+      "precise_compass": "Precise Compass",
+      "nearby": "Nearby",
+      "imsak_iftar": "Imsak/Iftar Tracker",
+      "mecca_direction": "Direction of Mecca",
+      "distance_from": "km from",
+      "compass_access": "Compass Access",
+      "compass_desc": "To indicate the Qibla direction, we need access to your device's sensors.",
+      "allow_access": "Allow Access",
+      "metal_warning": "Move away from metal objects for better accuracy.",
+      "kaaba_mecca": "Kaaba, Mecca"
+    }
+  },
+  العربية: {
+    translation: {
+      "settings": "الإعدادات",
+      "location": "الموقع",
+      "current_city": "المدينة الحالية",
+      "search_city": "ابحث عن مدينة (مثل طوكيو، داكار)...",
+      "auto_location": "تحديد الموقع تلقائيًا",
+      "fetching_location": "جاري البحث...",
+      "calculation_method": "طريقة الحساب",
+      "convention": "المؤتمر",
+      "asr_method": "طريقة العصر",
+      "notifications": "الإشعارات",
+      "adhan_alerts": "تنبيهات الأذان",
+      "sound": "الصوت",
+      "appearance": "المظهر",
+      "dark_mode": "الوضع الداكن",
+      "language": "اللغة",
+      "home": "الرئيسية",
+      "next_prayer": "الصلاة القادمة",
+      "todays_prayers": "مواقيت اليوم",
+      "services": "الخدمات",
+      "quran": "القرآن",
+      "qibla": "القبلة",
+      "mosques": "المساجد",
+      "fasting": "الصيام",
+      "calendar": "التقويم",
+      "zakat": "الزكاة",
+      "duas": "أدعية",
+      "hadith": "حديث",
+      "qada": "قضاء",
+      "tajwid": "تجويد",
+      "help": "مساعدة",
+      "read_listen": "اقرأ واستمع",
+      "precise_compass": "بوصلة دقيقة",
+      "nearby": "قريب منك",
+      "imsak_iftar": "تتبع الإمساك/الإفطار",
+      "mecca_direction": "اتجاه مكة",
+      "distance_from": "كم من",
+      "compass_access": "الوصول إلى البوصلة",
+      "compass_desc": "للإشارة إلى اتجاه القبلة، نحتاج إلى الوصول إلى مستشعرات جهازك.",
+      "allow_access": "السماح بالوصول",
+      "metal_warning": "ابتعد عن الأجسام المعدنية للحصول على دقة أفضل.",
+      "kaaba_mecca": "الكعبة، مكة"
+    }
+  }
+};
+
+i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: "Français", // default language
+    fallbackLng: "Français",
+    interpolation: {
+      escapeValue: false
+    }
+  });
+
+export default i18n;
