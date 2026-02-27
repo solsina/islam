@@ -6,10 +6,13 @@ import {
 } from 'adhan';
 import { useSettingsStore } from '../store/useSettingsStore';
 
-export const getPrayerTimes = (date: Date = new Date()) => {
+export const getPrayerTimes = (date: Date = new Date(), lat?: number, lng?: number) => {
   const { location, calculationMethod, asrMethod } = useSettingsStore.getState();
   
-  const coordinates = new Coordinates(location.lat, location.lng);
+  const finalLat = lat ?? location.lat;
+  const finalLng = lng ?? location.lng;
+  
+  const coordinates = new Coordinates(finalLat, finalLng);
   
   // Map our string to adhan's CalculationMethod
   let params;
