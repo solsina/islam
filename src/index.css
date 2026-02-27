@@ -1,4 +1,11 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* Fix Leaflet height in Flexbox context */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+}
 
 @theme {
   --color-primary: var(--primary);

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useTranslation } from 'react-i18next';
+import { useProfileStore } from '../store/useProfileStore';
+import { motion, AnimatePresence } from 'motion/react';
 
 const CALCULATION_METHODS = [
   { id: 'MuslimWorldLeague', name: 'Ligue Islamique Mondiale (MWL)' },
@@ -41,6 +42,13 @@ const LANGUAGES = [
 
 export default function Settings() {
   const { t } = useTranslation();
+  const { 
+    firstName, setFirstName, 
+    lastName, setLastName, 
+    age, setAge, 
+    mosque, setMosque 
+  } = useProfileStore();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -147,36 +155,114 @@ export default function Settings() {
     }, 500);
   };
 
-  return (
-    <div className="flex-1 overflow-y-auto pb-24 relative bg-transparent">
-      <Header leftIcon="arrow_back" />
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
 
-      <main className="px-4 pt-2 pb-6 space-y-6">
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-primary px-1">{t('location')}</h2>
-          <div className="bg-card-dark rounded-xl border border-white/5 divide-y divide-white/5">
-            <div className="p-4">
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto pb-24 relative bg-[#050505]">
+      {/* Background Glows */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2"></div>
+      </div>
+
+      <Header leftIcon="arrow_back" onLeftClick={() => window.history.back()} title="Paramètres" />
+
+      <motion.main 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="px-4 pt-2 pb-6 space-y-6 relative z-10"
+      >
+        <motion.section variants={itemVariants} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-1 h-3 bg-primary rounded-full"></span>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Profil</h2>
+          </div>
+          <div className="bg-card-dark rounded-3xl border border-white/5 p-5 space-y-4 backdrop-blur-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Prénom</label>
+                <input 
+                  type="text" 
+                  value={firstName} 
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-medium focus:border-primary focus:bg-white/10 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Nom</label>
+                <input 
+                  type="text" 
+                  value={lastName} 
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-medium focus:border-primary focus:bg-white/10 outline-none transition-all"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Âge</label>
+                <input 
+                  type="number" 
+                  value={age} 
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-medium focus:border-primary focus:bg-white/10 outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Ma Mosquée</label>
+                <input 
+                  type="text" 
+                  value={mosque} 
+                  onChange={(e) => setMosque(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-medium focus:border-primary focus:bg-white/10 outline-none transition-all"
+                />
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        <motion.section variants={itemVariants} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-1 h-3 bg-blue-500 rounded-full"></span>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('location')}</h2>
+          </div>
+          <div className="bg-card-dark rounded-3xl border border-white/5 divide-y divide-white/5 backdrop-blur-sm">
+            <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <span className="material-symbols-outlined text-slate-400">location_on</span>
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <span className="material-symbols-outlined">location_on</span>
+                  </div>
                   <div>
-                    <p className="text-sm font-semibold">{t('current_city')}</p>
-                    <p className="text-xs text-primary font-bold">{location.city}, {location.country}</p>
+                    <p className="text-sm font-bold text-white">{t('current_city')}</p>
+                    <p className="text-xs text-blue-400 font-bold uppercase tracking-wider">{location.city}, {location.country}</p>
                   </div>
                 </div>
               </div>
 
               <div className="relative">
-                <div className="flex items-center bg-black/50 border border-white/10 rounded-xl px-4 py-3 focus-within:border-primary/50 transition-colors">
+                <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus-within:border-blue-500/50 focus-within:bg-white/10 transition-all">
                   <span className="material-symbols-outlined text-slate-400 mr-3 text-lg">search</span>
                   <input 
                     type="text" 
                     placeholder={t('search_city')} 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-transparent border-none outline-none text-white w-full placeholder:text-slate-500 text-sm"
+                    className="bg-transparent border-none outline-none text-white w-full placeholder:text-slate-500 text-sm font-medium"
                   />
-                  {isSearching && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>}
+                  {isSearching && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
                 </div>
                 
                 {searchResults.length > 0 && (
@@ -196,47 +282,61 @@ export default function Settings() {
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-primary px-1">{t('calculation_method')}</h2>
-          <div className="bg-card-dark rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
-            <div 
-              className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors cursor-pointer"
+        <motion.section variants={itemVariants} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-1 h-3 bg-emerald-500 rounded-full"></span>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('calculation_method')}</h2>
+          </div>
+          <div className="bg-card-dark rounded-3xl border border-white/5 divide-y divide-white/5 overflow-hidden backdrop-blur-sm">
+            <motion.div 
+              whileTap={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              className="flex items-center justify-between p-5 cursor-pointer group"
               onClick={() => setActiveModal('calculation')}
             >
               <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-slate-400">settings_suggest</span>
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500/20 transition-colors">
+                  <span className="material-symbols-outlined">settings_suggest</span>
+                </div>
                 <div>
-                  <p className="text-sm font-semibold">{t('convention')}</p>
-                  <p className="text-xs text-slate-400">{getCalculationMethodName(calculationMethod)}</p>
+                  <p className="text-sm font-bold text-white">{t('convention')}</p>
+                  <p className="text-xs text-slate-400 font-medium">{getCalculationMethodName(calculationMethod)}</p>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
-            </div>
-            <div 
-              className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors cursor-pointer"
+              <span className="material-symbols-outlined text-slate-500 text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+            </motion.div>
+            <motion.div 
+              whileTap={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              className="flex items-center justify-between p-5 cursor-pointer group"
               onClick={() => setActiveModal('asr')}
             >
               <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-slate-400">straighten</span>
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500/20 transition-colors">
+                  <span className="material-symbols-outlined">straighten</span>
+                </div>
                 <div>
-                  <p className="text-sm font-semibold">{t('asr_method')}</p>
-                  <p className="text-xs text-slate-400">{getAsrMethodName(asrMethod)}</p>
+                  <p className="text-sm font-bold text-white">{t('asr_method')}</p>
+                  <p className="text-xs text-slate-400 font-medium">{getAsrMethodName(asrMethod)}</p>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
-            </div>
+              <span className="material-symbols-outlined text-slate-500 text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+            </motion.div>
           </div>
-        </section>
+        </motion.section>
 
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-primary px-1">{t('notifications')}</h2>
-          <div className="bg-card-dark rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
-            <div className="flex items-center justify-between p-4">
+        <motion.section variants={itemVariants} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-1 h-3 bg-amber-500 rounded-full"></span>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('notifications')}</h2>
+          </div>
+          <div className="bg-card-dark rounded-3xl border border-white/5 divide-y divide-white/5 overflow-hidden backdrop-blur-sm">
+            <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-slate-400">notifications_active</span>
-                <p className="text-sm font-semibold">{t('adhan_alerts')}</p>
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500">
+                  <span className="material-symbols-outlined">notifications_active</span>
+                </div>
+                <p className="text-sm font-bold text-white">{t('adhan_alerts')}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 
@@ -245,32 +345,40 @@ export default function Settings() {
                   checked={notifications.adhan}
                   onChange={toggleAdhanNotification}
                 />
-                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
-            <div 
-              className={`flex items-center justify-between p-4 transition-colors ${notifications.adhan ? 'hover:bg-white/5 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+            <motion.div 
+              whileTap={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              className={`flex items-center justify-between p-5 transition-colors group ${notifications.adhan ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
               onClick={() => notifications.adhan && setActiveModal('sound')}
             >
               <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-slate-400">volume_up</span>
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:bg-amber-500/20 transition-colors">
+                  <span className="material-symbols-outlined">volume_up</span>
+                </div>
                 <div>
-                  <p className="text-sm font-semibold">{t('sound')}</p>
-                  <p className="text-xs text-slate-400">{notifications.sound}</p>
+                  <p className="text-sm font-bold text-white">{t('sound')}</p>
+                  <p className="text-xs text-slate-400 font-medium">{notifications.sound}</p>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
-            </div>
+              <span className="material-symbols-outlined text-slate-500 text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+            </motion.div>
           </div>
-        </section>
+        </motion.section>
 
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-primary px-1">{t('appearance')}</h2>
-          <div className="bg-card-dark rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
-            <div className="flex items-center justify-between p-4">
+        <motion.section variants={itemVariants} className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="w-1 h-3 bg-purple-500 rounded-full"></span>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('appearance')}</h2>
+          </div>
+          <div className="bg-card-dark rounded-3xl border border-white/5 divide-y divide-white/5 overflow-hidden backdrop-blur-sm">
+            <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-slate-400">dark_mode</span>
-                <p className="text-sm font-semibold">{t('dark_mode')}</p>
+                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                  <span className="material-symbols-outlined">dark_mode</span>
+                </div>
+                <p className="text-sm font-bold text-white">{t('dark_mode')}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 
@@ -279,116 +387,118 @@ export default function Settings() {
                   checked={appearance.darkMode}
                   onChange={toggleDarkMode}
                 />
-                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
               </label>
             </div>
-            <div 
-              className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors cursor-pointer"
+            <motion.div 
+              whileTap={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              className="flex items-center justify-between p-5 cursor-pointer group"
               onClick={() => setActiveModal('language')}
             >
               <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-slate-400">translate</span>
+                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:bg-purple-500/20 transition-colors">
+                  <span className="material-symbols-outlined">translate</span>
+                </div>
                 <div>
-                  <p className="text-sm font-semibold">{t('language')}</p>
-                  <p className="text-xs text-slate-400">{appearance.language}</p>
+                  <p className="text-sm font-bold text-white">{t('language')}</p>
+                  <p className="text-xs text-slate-400 font-medium">{appearance.language}</p>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
-            </div>
+              <span className="material-symbols-outlined text-slate-500 text-sm group-hover:translate-x-1 transition-transform">chevron_right</span>
+            </motion.div>
           </div>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-primary px-1">Développement</h2>
-          <div className="bg-card-dark rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
-            <Link 
-              to="/showcase"
-              className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-slate-400">auto_awesome</span>
-                <div>
-                  <p className="text-sm font-semibold">Showcase de l'App</p>
-                  <p className="text-xs text-slate-400">Voir les visuels de l'avancement</p>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-slate-500 text-sm">chevron_right</span>
-            </Link>
-          </div>
-        </section>
+        </motion.section>
 
         <div className="text-center py-4">
-          <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Emerald Islam v1.0</p>
+          <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Emerald Islam v1.0</p>
         </div>
-      </main>
+      </motion.main>
 
       {/* Modals */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/80 backdrop-blur-sm" onClick={() => setActiveModal(null)}>
-          <div 
-            className="bg-card-dark w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-white/10 overflow-hidden flex flex-col max-h-[80vh]"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {activeModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/80 backdrop-blur-md" 
+            onClick={() => setActiveModal(null)}
           >
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/20">
-              <h3 className="text-lg font-bold text-white">
-                {activeModal === 'calculation' && t('convention')}
-                {activeModal === 'asr' && t('asr_method')}
-                {activeModal === 'sound' && t('sound')}
-                {activeModal === 'language' && t('language')}
-              </h3>
-              <button onClick={() => setActiveModal(null)} className="p-2 rounded-full hover:bg-white/10 transition-colors">
-                <span className="material-symbols-outlined text-slate-400">close</span>
-              </button>
-            </div>
-            
-            <div className="overflow-y-auto p-2">
-              {activeModal === 'calculation' && CALCULATION_METHODS.map(method => (
-                <button
-                  key={method.id}
-                  className={`w-full text-left p-4 rounded-xl mb-1 flex items-center justify-between transition-colors ${calculationMethod === method.id ? 'bg-primary/20 text-primary' : 'hover:bg-white/5 text-slate-300'}`}
-                  onClick={() => { setCalculationMethod(method.id as any); setActiveModal(null); }}
-                >
-                  <span className="font-medium">{method.name}</span>
-                  {calculationMethod === method.id && <span className="material-symbols-outlined">check</span>}
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-card-dark w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2rem] border border-white/10 overflow-hidden flex flex-col max-h-[80vh] shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-blue-500 to-purple-500"></div>
+              
+              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <h3 className="text-lg font-black text-white uppercase tracking-tight">
+                  {activeModal === 'calculation' && t('convention')}
+                  {activeModal === 'asr' && t('asr_method')}
+                  {activeModal === 'sound' && t('sound')}
+                  {activeModal === 'language' && t('language')}
+                </h3>
+                <button onClick={() => setActiveModal(null)} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                  <span className="material-symbols-outlined text-slate-400">close</span>
                 </button>
-              ))}
+              </div>
+              
+              <div className="overflow-y-auto p-4 space-y-2">
+                {activeModal === 'calculation' && CALCULATION_METHODS.map(method => (
+                  <motion.button
+                    key={method.id}
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full text-left p-4 rounded-2xl flex items-center justify-between transition-all ${calculationMethod === method.id ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-transparent'}`}
+                    onClick={() => { setCalculationMethod(method.id as any); setActiveModal(null); }}
+                  >
+                    <span className="font-bold text-sm">{method.name}</span>
+                    {calculationMethod === method.id && <span className="material-symbols-outlined">check_circle</span>}
+                  </motion.button>
+                ))}
 
-              {activeModal === 'asr' && ASR_METHODS.map(method => (
-                <button
-                  key={method.id}
-                  className={`w-full text-left p-4 rounded-xl mb-1 flex items-center justify-between transition-colors ${asrMethod === method.id ? 'bg-primary/20 text-primary' : 'hover:bg-white/5 text-slate-300'}`}
-                  onClick={() => { setAsrMethod(method.id as any); setActiveModal(null); }}
-                >
-                  <span className="font-medium">{method.name}</span>
-                  {asrMethod === method.id && <span className="material-symbols-outlined">check</span>}
-                </button>
-              ))}
+                {activeModal === 'asr' && ASR_METHODS.map(method => (
+                  <motion.button
+                    key={method.id}
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full text-left p-4 rounded-2xl flex items-center justify-between transition-all ${asrMethod === method.id ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-transparent'}`}
+                    onClick={() => { setAsrMethod(method.id as any); setActiveModal(null); }}
+                  >
+                    <span className="font-bold text-sm">{method.name}</span>
+                    {asrMethod === method.id && <span className="material-symbols-outlined">check_circle</span>}
+                  </motion.button>
+                ))}
 
-              {activeModal === 'sound' && SOUNDS.map(sound => (
-                <button
-                  key={sound}
-                  className={`w-full text-left p-4 rounded-xl mb-1 flex items-center justify-between transition-colors ${notifications.sound === sound ? 'bg-primary/20 text-primary' : 'hover:bg-white/5 text-slate-300'}`}
-                  onClick={() => playSoundPreview(sound)}
-                >
-                  <span className="font-medium">{sound}</span>
-                  {notifications.sound === sound && <span className="material-symbols-outlined">check</span>}
-                </button>
-              ))}
+                {activeModal === 'sound' && SOUNDS.map(sound => (
+                  <motion.button
+                    key={sound}
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full text-left p-4 rounded-2xl flex items-center justify-between transition-all ${notifications.sound === sound ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-transparent'}`}
+                    onClick={() => playSoundPreview(sound)}
+                  >
+                    <span className="font-bold text-sm">{sound}</span>
+                    {notifications.sound === sound && <span className="material-symbols-outlined">check_circle</span>}
+                  </motion.button>
+                ))}
 
-              {activeModal === 'language' && LANGUAGES.map(lang => (
-                <button
-                  key={lang}
-                  className={`w-full text-left p-4 rounded-xl mb-1 flex items-center justify-between transition-colors ${appearance.language === lang ? 'bg-primary/20 text-primary' : 'hover:bg-white/5 text-slate-300'}`}
-                  onClick={() => { setLanguage(lang); setActiveModal(null); }}
-                >
-                  <span className="font-medium">{lang}</span>
-                  {appearance.language === lang && <span className="material-symbols-outlined">check</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+                {activeModal === 'language' && LANGUAGES.map(lang => (
+                  <motion.button
+                    key={lang}
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full text-left p-4 rounded-2xl flex items-center justify-between transition-all ${appearance.language === lang ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-transparent'}`}
+                    onClick={() => { setLanguage(lang); setActiveModal(null); }}
+                  >
+                    <span className="font-bold text-sm">{lang}</span>
+                    {appearance.language === lang && <span className="material-symbols-outlined">check_circle</span>}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

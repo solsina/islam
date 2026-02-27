@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useGamificationStore, XP_VALUES } from './useGamificationStore';
 
 export type PrayerType = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 
@@ -15,7 +16,9 @@ interface QadaState {
   
   dailyPrayers: Record<PrayerType, boolean>;
   lastDailyTrackedDate: string;
-  lifetimePrayerScore: number;
+  prayerStreak: number;
+  fastingStreak: number;
+  totalPrayersValidated: number;
   
   // New user profile data for calculation
   userProfile: {
@@ -57,7 +60,9 @@ export const useQadaStore = create<QadaState>()(
         isha: false,
       },
       lastDailyTrackedDate: new Date().toISOString().split('T')[0],
-      lifetimePrayerScore: 0,
+      prayerStreak: 0,
+      fastingStreak: 0,
+      totalPrayersValidated: 0,
       userProfile: null,
 
       setInitialQada: (profile) => {
@@ -72,20 +77,13 @@ export const useQadaStore = create<QadaState>()(
         let totalFasting = yearsMissed * 30; // Approx 30 days per Ramadan
         
         // Apply regularity factor (1 - regularity/100)
-        // If regularity is 100%, debt is 0. If 0%, debt is full.
         totalPrayers = totalPrayers * (1 - profile.regularity / 100);
         totalFasting = totalFasting * (1 - profile.regularity / 100);
         
-        // Apply menstruation exemption if female (approx 7 days/month = ~23% of time)
-        // 7 days / 30 days = 0.233
         if (profile.isFemale) {
              totalPrayers = totalPrayers * (1 - 0.233);
-             // For fasting, women have to make up missed days, so we don't reduce the fasting debt based on menstruation!
-             // Actually, they miss ~7 days per Ramadan, but they MUST make them up. 
-             // So if they didn't make them up, the debt remains 30 days/year missed.
         }
 
-        // Apply safety margin (1.10)
         if (profile.safetyMargin) {
           totalPrayers = totalPrayers * 1.10;
           totalFasting = totalFasting * 1.10;
@@ -100,50 +98,68 @@ export const useQadaStore = create<QadaState>()(
           initialCounts: finalDebt,
           totalDebt: finalDebt,
           fastingDebt: finalFastingDebt,
-          lifetimePrayerScore: 0, // Reset score on new calculation
+          prayerStreak: 0,
+          fastingStreak: 0,
+          totalPrayersValidated: 0
         });
       },
 
       markDailyPrayer: (prayer) => {
+        useGamificationStore.getState().addExperience(XP_VALUES.PRAYER_ON_TIME);
         set((state) => {
           const newDaily = { ...state.dailyPrayers, [prayer]: true };
-          // Check if all completed for visual effect or bonus
-          return { dailyPrayers: newDaily };
+          const allDone = Object.values(newDaily).every(v => v);
+          if (allDone && !Object.values(state.dailyPrayers).every(v => v)) {
+            useGamificationStore.getState().addExperience(50); // Bonus for completing all 5
+          }
+          return { 
+            dailyPrayers: newDaily,
+            prayerStreak: allDone ? state.prayerStreak + 1 : state.prayerStreak,
+            totalPrayersValidated: state.totalPrayersValidated + 1
+          };
         });
       },
 
       validateDoubleShot: (prayer) => {
+        useGamificationStore.getState().addExperience(XP_VALUES.PRAYER_ON_TIME + XP_VALUES.PRAYER_QADA);
         set((state) => {
           const newDaily = { ...state.dailyPrayers, [prayer]: true };
           const newDebt = Math.max(0, state.totalDebt - 1);
+          const allDone = Object.values(newDaily).every(v => v);
           return { 
             dailyPrayers: newDaily,
             totalDebt: newDebt,
-            lifetimePrayerScore: state.lifetimePrayerScore + 2 // +1 for daily, +1 for qada
+            prayerStreak: allDone ? state.prayerStreak + 1 : state.prayerStreak,
+            totalPrayersValidated: state.totalPrayersValidated + 1
           };
         });
       },
 
       validateOneQada: () => {
+        useGamificationStore.getState().addExperience(XP_VALUES.PRAYER_QADA);
         set((state) => ({
           totalDebt: Math.max(0, state.totalDebt - 1),
-          lifetimePrayerScore: state.lifetimePrayerScore + 1
+          totalPrayersValidated: state.totalPrayersValidated + 1
         }));
       },
 
       validateOneFasting: (isVoluntary = false, date = new Date().toISOString().split('T')[0]) => {
         set((state) => {
           if (isVoluntary) {
-            // Check if already added
             if (state.voluntaryFasts.includes(date)) return {};
-            return { voluntaryFasts: [...state.voluntaryFasts, date] };
+            useGamificationStore.getState().addExperience(XP_VALUES.FASTING_VOLUNTARY);
+            return { 
+              voluntaryFasts: [...state.voluntaryFasts, date],
+              fastingStreak: state.fastingStreak + 1
+            };
           } else {
-            // Check if already added as Qada
             if (state.qadaFasts?.includes(date)) return {};
+            useGamificationStore.getState().addExperience(XP_VALUES.FASTING_RAMADAN);
             return { 
               fastingDebt: Math.max(0, state.fastingDebt - 1),
               fastingCompleted: (state.fastingCompleted || 0) + 1,
-              qadaFasts: [...(state.qadaFasts || []), date]
+              qadaFasts: [...(state.qadaFasts || []), date],
+              fastingStreak: state.fastingStreak + 1
             };
           }
         });
@@ -166,16 +182,8 @@ export const useQadaStore = create<QadaState>()(
         const state = get();
         
         if (state.lastDailyTrackedDate !== today) {
-          // Check for missed prayers from yesterday and add to debt
-          // This is a simplified logic. In a real app, we'd need to know exactly when the day changed.
-          // For now, we just reset. The "missed prayer -> debt" logic requires a more robust background check
-          // which is tricky in a client-side only app without a server.
-          // We will implement the "add to debt" manually if the user opens the app next day? 
-          // Let's keep it simple: Reset daily.
-          
-          // Ideally:
-          // const missedCount = Object.values(state.dailyPrayers).filter(v => !v).length;
-          // set({ totalDebt: state.totalDebt + missedCount });
+          // If yesterday was not fully completed, streak resets
+          const allDoneYesterday = Object.values(state.dailyPrayers).every(v => v);
           
           set({
             dailyPrayers: {
@@ -186,6 +194,7 @@ export const useQadaStore = create<QadaState>()(
               isha: false,
             },
             lastDailyTrackedDate: today,
+            prayerStreak: allDoneYesterday ? state.prayerStreak : 0
           });
         }
       },

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useGamificationStore, XP_VALUES } from './useGamificationStore';
 
 interface TajwidState {
   completedLessons: string[];
@@ -12,12 +13,13 @@ export const useTajwidStore = create<TajwidState>()(
   persist(
     (set, get) => ({
       completedLessons: [],
-      completeLesson: (id) =>
-        set((state) => ({
-          completedLessons: state.completedLessons.includes(id)
-            ? state.completedLessons
-            : [...state.completedLessons, id],
-        })),
+      completeLesson: (id) => {
+        const state = get();
+        if (!state.completedLessons.includes(id)) {
+          useGamificationStore.getState().addExperience(XP_VALUES.TAJWID_LESSON);
+          set({ completedLessons: [...state.completedLessons, id] });
+        }
+      },
       isLessonCompleted: (id) => get().completedLessons.includes(id),
       getCompletionPercentage: (totalLessons) => {
         if (totalLessons === 0) return 0;

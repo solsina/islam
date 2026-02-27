@@ -5,6 +5,7 @@ import { tajwidData, TajwidModule, TajwidLesson, TajwidCategory, verseAnalysisDa
 import { useTranslation } from 'react-i18next';
 import TajwidText from '../components/TajwidText';
 import AudioVisualizer from '../components/AudioVisualizer';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Tajwid() {
   const { t } = useTranslation();
@@ -238,7 +239,12 @@ export default function Tajwid() {
     }
 
     return (
-      <div className="mt-6 bg-black/40 rounded-2xl border border-white/10 overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        exit={{ opacity: 0, height: 0 }}
+        className="mt-6 bg-black/40 rounded-2xl border border-white/10 overflow-hidden"
+      >
         <div className="flex flex-col md:flex-row">
           <div className="p-6 flex items-center justify-center bg-white/5 md:w-1/3">
             <svg viewBox="0 0 120 100" className="w-40 h-40 text-slate-400">
@@ -255,23 +261,44 @@ export default function Tajwid() {
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
   };
 
   if (activeLesson) {
     const isCompleted = completedLessons.includes(activeLesson.id);
     return (
-      <div className="flex-1 overflow-y-auto pb-24 bg-transparent">
+      <div className="flex-1 overflow-y-auto pb-32 bg-transparent">
         <Header leftIcon="arrow_back" onLeftClick={handleBack} />
-        <div className="px-4 pt-2 pb-6 space-y-6">
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="px-4 pt-2 pb-6 space-y-6"
+        >
           <div className="flex items-center gap-3 mb-2">
-            <div 
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
               className="w-10 h-10 rounded-full flex items-center justify-center"
               style={{ backgroundColor: `${activeLesson.color}20`, color: activeLesson.color }}
             >
               <span className="material-symbols-outlined">{activeLesson.icon}</span>
-            </div>
+            </motion.div>
             <div>
               <h2 className="text-xl font-bold text-white">{activeLesson.title}</h2>
               <span className="text-xs font-bold px-2 py-0.5 rounded bg-white/10 text-slate-300 uppercase tracking-wider">
@@ -280,9 +307,13 @@ export default function Tajwid() {
             </div>
           </div>
 
-          <div className="bg-card-dark border border-white/5 rounded-xl p-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card-dark border border-white/5 rounded-xl p-6"
+          >
             <p className="text-slate-200 leading-relaxed text-lg">{activeLesson.content}</p>
-          </div>
+          </motion.div>
 
           {activeLesson.makharij && (
             <div className="space-y-2">
@@ -294,7 +325,9 @@ export default function Tajwid() {
                 Visualiser le Point de Sortie (Makhraj)
               </button>
               
-              {showMakharij && renderMakharijVisual(activeLesson.makharij)}
+              <AnimatePresence>
+                {showMakharij && renderMakharijVisual(activeLesson.makharij)}
+              </AnimatePresence>
             </div>
           )}
 
@@ -308,7 +341,13 @@ export default function Tajwid() {
                 const result = feedback[exampleId];
 
                 return (
-                  <div key={idx} className="bg-card-dark border border-white/5 rounded-xl p-6 flex flex-col gap-4 relative overflow-hidden">
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="bg-card-dark border border-white/5 rounded-xl p-6 flex flex-col gap-4 relative overflow-hidden"
+                  >
                     <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
                     
                     <div className="text-center py-4">
@@ -322,7 +361,9 @@ export default function Tajwid() {
                     <div className="flex justify-between items-center">
                       <p className="text-slate-400 text-sm italic">{ex.explanation}</p>
                       <div className="flex items-center gap-2">
-                        <button 
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => playAudio(ex.audioUrl, exampleId)}
                           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                             playingAudio === exampleId
@@ -334,9 +375,11 @@ export default function Tajwid() {
                           <span className="material-symbols-outlined">
                             {playingAudio === exampleId ? 'pause' : 'volume_up'}
                           </span>
-                        </button>
+                        </motion.button>
                         
-                        <button 
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
                           onClick={() => isRecording ? stopRecording() : startRecording(exampleId)}
                           disabled={isAnalyzing}
                           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
@@ -351,64 +394,87 @@ export default function Tajwid() {
                           <span className="material-symbols-outlined">
                             {isRecording ? 'stop' : 'mic'}
                           </span>
-                        </button>
+                        </motion.button>
                       </div>
                     </div>
 
                     {/* Recording Visualizer */}
-                    {isRecording && analyser && (
-                      <div className="mt-2 bg-black/40 rounded-lg p-2 border border-white/5 h-16 flex items-center justify-center">
-                        <AudioVisualizer 
-                          analyser={analyser} 
-                          width={250} 
-                          height={50} 
-                          className="w-full h-full"
-                        />
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {isRecording && analyser && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-2 bg-black/40 rounded-lg p-2 border border-white/5 h-16 flex items-center justify-center"
+                        >
+                          <AudioVisualizer 
+                            analyser={analyser} 
+                            width={250} 
+                            height={50} 
+                            className="w-full h-full"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Analysis State */}
-                    {isAnalyzing && (
-                      <div className="mt-2 bg-white/5 rounded-lg p-3 flex items-center gap-3 animate-pulse">
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs text-slate-300">Analyse par l'IA en cours...</span>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {isAnalyzing && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-2 bg-white/5 rounded-lg p-3 flex items-center gap-3 animate-pulse"
+                        >
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-xs text-slate-300">Analyse par l'IA en cours...</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Feedback Result */}
-                    {result && !isRecording && !isAnalyzing && (
-                      <div className={`mt-2 rounded-lg p-3 border ${
-                        result.status === 'success' 
-                          ? 'bg-emerald-500/10 border-emerald-500/20' 
-                          : 'bg-amber-500/10 border-amber-500/20'
-                      }`}>
-                        <div className="flex items-start gap-2">
-                          <span className={`material-symbols-outlined text-lg ${
-                            result.status === 'success' ? 'text-emerald-500' : 'text-amber-500'
-                          }`}>
-                            {result.status === 'success' ? 'check_circle' : 'warning'}
-                          </span>
-                          <div>
-                            <p className={`text-xs font-bold mb-1 ${
+                    <AnimatePresence>
+                      {result && !isRecording && !isAnalyzing && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className={`mt-2 rounded-lg p-3 border ${
+                            result.status === 'success' 
+                              ? 'bg-emerald-500/10 border-emerald-500/20' 
+                              : 'bg-amber-500/10 border-amber-500/20'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <span className={`material-symbols-outlined text-lg ${
                               result.status === 'success' ? 'text-emerald-500' : 'text-amber-500'
                             }`}>
-                              {result.status === 'success' ? 'Validé' : 'À améliorer'}
-                            </p>
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {result.message}
-                            </p>
+                              {result.status === 'success' ? 'check_circle' : 'warning'}
+                            </span>
+                            <div>
+                              <p className={`text-xs font-bold mb-1 ${
+                                result.status === 'success' ? 'text-emerald-500' : 'text-amber-500'
+                              }`}>
+                                {result.status === 'success' ? 'Validé' : 'À améliorer'}
+                              </p>
+                              <p className="text-xs text-slate-300 leading-relaxed">
+                                {result.message}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
                 );
               })}
             </div>
           )}
 
           <div className="pt-4">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 completeLesson(activeLesson.id);
                 handleBack();
@@ -435,18 +501,23 @@ export default function Tajwid() {
                   Validez au moins un exemple pour terminer
                 </>
               )}
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   if (activeModule) {
     return (
-      <div className="flex-1 overflow-y-auto pb-24 bg-transparent">
+      <div className="flex-1 overflow-y-auto pb-32 bg-transparent">
         <Header leftIcon="arrow_back" onLeftClick={handleBack} />
-        <div className="px-4 pt-2 pb-6 space-y-4">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="px-4 pt-2 pb-6 space-y-4"
+        >
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-white mb-2">{activeModule.title}</h2>
             <p className="text-slate-400 text-sm">{activeModule.description}</p>
@@ -455,8 +526,11 @@ export default function Tajwid() {
           {activeModule.lessons.map((lesson, idx) => {
             const isCompleted = completedLessons.includes(lesson.id);
             return (
-              <div 
+              <motion.div 
                 key={lesson.id}
+                variants={itemVariants}
+                whileHover={{ scale: 1.02, x: 5 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveLesson(lesson)}
                 className="bg-card-dark border border-white/5 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-primary/30 transition-all group relative overflow-hidden"
               >
@@ -479,20 +553,28 @@ export default function Tajwid() {
                   {isCompleted && <span className="material-symbols-outlined text-primary text-lg">check_circle</span>}
                   <span className="material-symbols-outlined text-slate-500 group-hover:text-white transition-colors">chevron_right</span>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto pb-24 bg-transparent">
-      <Header />
+    <div className="flex-1 overflow-y-auto pb-32 bg-transparent">
+      <Header leftIcon="arrow_back" title="Tajwid" />
 
-      <section className="px-4 pt-2 pb-6">
-        <div className="bg-card-dark border border-white/5 rounded-xl p-6 relative overflow-hidden emerald-glow mb-8">
+      <motion.section 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="px-4 pt-2 pb-6"
+      >
+        <motion.div 
+          initial={{ scale: 0.95 }}
+          animate={{ scale: 1 }}
+          className="bg-card-dark border border-white/5 rounded-xl p-6 relative overflow-hidden emerald-glow mb-8"
+        >
           <div className="absolute right-0 top-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
           
           <div className="relative z-10">
@@ -507,16 +589,22 @@ export default function Tajwid() {
             </div>
             
             <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-              <div className="emerald-gradient h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(16,183,72,0.5)]" style={{ width: `${completionPercentage}%` }}></div>
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${completionPercentage}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="emerald-gradient h-full rounded-full shadow-[0_0_10px_rgba(16,183,72,0.5)]" 
+              />
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar mb-6">
           {filters.map(filter => (
-            <button
+            <motion.button
               key={filter}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveFilter(filter)}
               className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                 activeFilter === filter
@@ -525,7 +613,7 @@ export default function Tajwid() {
               }`}
             >
               {filter}
-            </button>
+            </motion.button>
           ))}
         </div>
 
@@ -537,8 +625,9 @@ export default function Tajwid() {
               {verseAnalysisData.map((word) => {
                 const rule = word.ruleId ? tajwidRules[word.ruleId] : null;
                 return (
-                  <span 
+                  <motion.span 
                     key={word.id}
+                    layout
                     onClick={() => setSelectedWordId(selectedWordId === word.id ? null : word.id)}
                     className={`cursor-pointer transition-all relative ${
                       selectedWordId === word.id ? 'text-primary scale-110' : 'hover:text-primary/80'
@@ -546,35 +635,44 @@ export default function Tajwid() {
                     style={{ color: rule ? rule.color : 'inherit' }}
                   >
                     {word.text}
-                    {selectedWordId === word.id && (
-                      <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-48 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 z-50 shadow-2xl">
-                        <div className="text-center">
-                          <p className="text-xs text-slate-400 mb-2">{word.translation}</p>
-                          {rule ? (
-                            <>
-                              <p className="text-xs font-bold text-white mb-1" style={{ color: rule.color }}>{rule.name}</p>
-                              <p className="text-[10px] text-slate-300 leading-tight mb-3">{rule.description}</p>
-                            </>
-                          ) : (
-                            <p className="text-[10px] text-slate-500 mb-3">Aucune règle spécifique</p>
-                          )}
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              playAudio(word.audioUrl, `word-${word.id}`);
-                            }}
-                            className="w-full py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white transition-colors flex items-center justify-center gap-2"
-                          >
-                            <span className="material-symbols-outlined text-sm">
-                              {playingAudio === `word-${word.id}` ? 'pause' : 'play_arrow'}
-                            </span>
-                            {playingAudio === `word-${word.id}` ? 'Pause' : 'Écouter'}
-                          </button>
-                        </div>
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-black/90 border-r border-b border-white/10 rotate-45"></div>
-                      </div>
-                    )}
-                  </span>
+                    <AnimatePresence>
+                      {selectedWordId === word.id && (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                          className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-48 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 z-50 shadow-2xl"
+                        >
+                          <div className="text-center">
+                            <p className="text-xs text-slate-400 mb-2">{word.translation}</p>
+                            {rule ? (
+                              <>
+                                <p className="text-xs font-bold text-white mb-1" style={{ color: rule.color }}>{rule.name}</p>
+                                <p className="text-[10px] text-slate-300 leading-tight mb-3">{rule.description}</p>
+                              </>
+                            ) : (
+                              <p className="text-[10px] text-slate-500 mb-3">Aucune règle spécifique</p>
+                            )}
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playAudio(word.audioUrl, `word-${word.id}`);
+                              }}
+                              className="w-full py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white transition-colors flex items-center justify-center gap-2"
+                            >
+                              <span className="material-symbols-outlined text-sm">
+                                {playingAudio === `word-${word.id}` ? 'pause' : 'play_arrow'}
+                              </span>
+                              {playingAudio === `word-${word.id}` ? 'Pause' : 'Écouter'}
+                            </motion.button>
+                          </div>
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-black/90 border-r border-b border-white/10 rotate-45"></div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.span>
                 );
               })}
             </div>
@@ -585,14 +683,22 @@ export default function Tajwid() {
           <h3 className="text-slate-100 font-bold uppercase tracking-widest text-xs">Leçons Interactives</h3>
         </div>
 
-        <div className="grid gap-4">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid gap-4"
+        >
           {filteredModules.map((mod, index) => {
             const moduleLessons = mod.lessons.length;
             const completedInModule = mod.lessons.filter(l => completedLessons.includes(l.id)).length;
             
             return (
-              <div 
+              <motion.div 
                 key={mod.id} 
+                variants={itemVariants}
+                whileHover={{ scale: 1.02, x: 5 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveModule(mod)}
                 className="bg-card-dark border border-white/5 hover:border-white/20 rounded-xl p-5 cursor-pointer transition-all group"
               >
@@ -604,18 +710,20 @@ export default function Tajwid() {
                 
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                    <div 
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(completedInModule / moduleLessons) * 100}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
                       className="h-full bg-slate-500 rounded-full" 
-                      style={{ width: `${(completedInModule / moduleLessons) * 100}%` }}
-                    ></div>
+                    />
                   </div>
                   <span className="text-[10px] text-slate-500 font-mono">{completedInModule}/{moduleLessons}</span>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
     </div>
   );
 }

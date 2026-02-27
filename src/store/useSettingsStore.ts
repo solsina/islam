@@ -18,6 +18,11 @@ interface SettingsState {
     darkMode: boolean;
     language: string;
   };
+  quranSettings: {
+    fontSize: number;
+    showTranslation: boolean;
+    showPhonetic: boolean;
+  };
   hijriAdjustment: number;
   setLocation: (location: SettingsState['location']) => void;
   setCalculationMethod: (method: SettingsState['calculationMethod']) => void;
@@ -26,6 +31,7 @@ interface SettingsState {
   setSound: (sound: string) => void;
   toggleDarkMode: () => void;
   setLanguage: (language: string) => void;
+  setQuranSettings: (settings: Partial<SettingsState['quranSettings']>) => void;
   setHijriAdjustment: (adjustment: number) => void;
 }
 
@@ -48,6 +54,11 @@ export const useSettingsStore = create<SettingsState>()(
         darkMode: true,
         language: 'Français',
       },
+      quranSettings: {
+        fontSize: 30,
+        showTranslation: true,
+        showPhonetic: true,
+      },
       hijriAdjustment: 0,
       setLocation: (location) => set({ location }),
       setCalculationMethod: (calculationMethod) => set({ calculationMethod }),
@@ -67,6 +78,10 @@ export const useSettingsStore = create<SettingsState>()(
       setLanguage: (language) =>
         set((state) => ({
           appearance: { ...state.appearance, language },
+        })),
+      setQuranSettings: (settings) =>
+        set((state) => ({
+          quranSettings: { ...state.quranSettings, ...settings },
         })),
       setHijriAdjustment: (hijriAdjustment) => set({ hijriAdjustment }),
     }),

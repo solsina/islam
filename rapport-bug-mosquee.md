@@ -1,3 +1,28 @@
+# Rapport de Bug - Page Mosquées
+
+## Problème rencontré
+La carte (MapContainer de react-leaflet) ne s'affiche pas du tout, et la liste des mosquées trouvées (bien qu'indiquant "5 trouvées") semble invisible ou coupée. Le fond reste noir/sombre et les éléments interactifs de la carte n'apparaissent pas.
+
+## Analyse du problème
+
+1. **Problème de la Carte (Leaflet) invisible :**
+   - Le composant `<MapContainer>` a besoin d'une hauteur explicite pour s'afficher. Actuellement, il a `style={{ height: '100%', width: '100%' }}`.
+   - Le parent de `<MapContainer>` est `<div className="flex-1 relative z-0">`.
+   - Cependant, le parent global est `<div className="flex-1 bg-[#0d1a14] relative h-screen flex flex-col overflow-hidden font-sans">`.
+   - Il est possible que la hauteur `100%` ne soit pas correctement calculée si un des parents n'a pas une hauteur définie de manière absolue ou si flexbox ne distribue pas l'espace correctement.
+   - De plus, les styles CSS de Leaflet (`leaflet/dist/leaflet.css`) sont bien importés, mais il arrive parfois que des conflits CSS avec Tailwind (notamment sur les z-index ou les overflow) cachent la carte.
+
+2. **Problème de la liste des mosquées invisible :**
+   - La liste est contenue dans `<motion.div className="... max-h-[45vh] overflow-y-auto no-scrollbar">`.
+   - Le parent de ce `motion.div` est `<div className="pointer-events-auto">` qui est lui-même dans `<div className="absolute bottom-0 left-0 right-0 z-[400] pointer-events-none">`.
+   - Il est possible que le `max-h-[45vh]` combiné avec le positionnement absolu en bas (`bottom-0`) fasse que le contenu soit poussé en dehors de l'écran ou caché derrière un autre élément.
+   - Le conteneur parent a `pointer-events-none` et l'enfant a `pointer-events-auto`, ce qui est correct pour laisser passer les clics sur la carte, mais peut-être que la hauteur n'est pas bien gérée.
+
+## Code de la page (`/src/pages/Mosques.tsx`)
+
+Voici le code complet de la page pour que tu puisses l'analyser et trouver la solution :
+
+```tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -6,7 +31,6 @@ import Header from '../components/Header';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { motion, AnimatePresence } from 'motion/react';
 import { getPrayerTimes, formatTime } from '../utils/prayerTimes';
-import { GoogleGenAI } from '@google/genai';
 
 // Fix Leaflet icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -33,15 +57,9 @@ const mosqueIcon = new L.Icon({
 // Component to update map center
 function ChangeView({ center }: { center: [number, number] }) {
   const map = useMap();
-  const isFirstRender = useRef(true);
-  
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    map.flyTo(center, 15, { animate: true, duration: 1.5 });
-  }, [center[0], center[1]]);
+    map.flyTo(center, map.getZoom(), { animate: true, duration: 1.5 });
+  }, [center, map]);
   return null;
 }
 
@@ -142,81 +160,56 @@ export default function Mosques() {
   const fetchMosquesByCoords = async (lat: number, lon: number, city: string = '') => {
     setLoading(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-      // On construit l'URL Overpass avec les paramètres encodés
-      const overpassQuery = `[out:json];(node['amenity'='place_of_worship']['religion'='muslim'](around:5000,${lat},${lon});way['amenity'='place_of_worship']['religion'='muslim'](around:5000,${lat},${lon}););out center;`;
-      const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
-
-      // Gemini fait la requête HTTP à notre place via url_context
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Fetch this URL and return ONLY the raw JSON response, no explanation, no markdown, no code block, just the pure JSON: ${overpassUrl}`,
-        config: {
-          tools: [{ urlContext: {} }],
+      const radiusMeters = 5000;
+      const query = `
+        [out:json];
+        (
+          node['amenity'='place_of_worship']['religion'='muslim'](around:${radiusMeters},${lat},${lon});
+          way['amenity'='place_of_worship']['religion'='muslim'](around:${radiusMeters},${lat},${lon});
+        );
+        out center;
+      `;
+      const res = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
+        body: 'data=' + encodeURIComponent(query),
       });
-
-      const rawText = response.text?.trim() ?? '';
-
-      // Nettoyer si Gemini a quand même ajouté des backticks markdown
-      const cleaned = rawText
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-
-      if (!cleaned || !cleaned.startsWith('{')) {
-        console.error('Gemini did not return valid JSON:', cleaned.substring(0, 200));
-        setMosques([]);
-        return;
-      }
-
-      const data = JSON.parse(cleaned);
-
+      
+      if (!res.ok) throw new Error('API Error');
+      const data = await res.json();
+      
       if (data.elements && data.elements.length > 0) {
-        const formattedMosques = data.elements
-          .map((el: any) => {
-            const mLat = el.lat ?? el.center?.lat;
-            const mLon = el.lon ?? el.center?.lon;
-            if (!mLat || !mLon) return null;
-
-            const R = 6371;
-            const dLat = (mLat - lat) * Math.PI / 180;
-            const dLng = (mLon - lon) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(lat * Math.PI / 180) * Math.cos(mLat * Math.PI / 180) *
-              Math.sin(dLng / 2) ** 2;
-            const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1000;
-
-            return {
-              uuid: el.id.toString(),
-              name: el.tags?.name ?? el.tags?.['name:fr'] ?? 'Mosquée',
-              latitude: mLat,
-              longitude: mLon,
-              proximity: distance,
-              image: '',
-              localisation: el.tags?.['addr:street']
-                ? `${el.tags?.['addr:housenumber'] ?? ''} ${el.tags?.['addr:street']}`.trim()
-                : (city || 'Localisation inconnue'),
-              times: ['--', '--', '--', '--', '--', '--'],
-              iqama: [],
-              jumua: el.tags?.['prayer_times:friday'] ?? null,
-              womenSpace: el.tags?.['women'] === 'yes' || el.tags?.['female'] === 'yes',
-              ablutions: el.tags?.['toilets:disposal'] === 'yes',
-              parking: el.tags?.['parking'] === 'yes',
-              handicapAccessibility: el.tags?.['wheelchair'] === 'yes',
-            };
-          })
-          .filter(Boolean)
-          .sort((a: any, b: any) => a.proximity - b.proximity);
-
+        const formattedMosques = data.elements.map((el: any) => {
+          const mLat = el.lat || el.center?.lat;
+          const mLon = el.lon || el.center?.lon;
+          const distance = getDistanceKm(lat, lon, mLat, mLon) * 1000; // in meters
+          
+          return {
+            uuid: el.id.toString(),
+            name: el.tags?.name || el.tags?.['name:fr'] || 'Mosquée',
+            latitude: mLat,
+            longitude: mLon,
+            proximity: distance,
+            image: '',
+            localisation: el.tags?.['addr:street'] ? `${el.tags?.['addr:housenumber'] || ''} ${el.tags?.['addr:street']}`.trim() : (city || 'Localisation inconnue'),
+            times: ['--', '--', '--', '--', '--', '--'],
+            iqama: [],
+            jumua: null,
+            womenSpace: false,
+            ablutions: false,
+            parking: false,
+            handicapAccessibility: false
+          };
+        }).sort((a: any, b: any) => a.proximity - b.proximity);
+        
         setMosques(formattedMosques);
       } else {
         setMosques([]);
       }
     } catch (error) {
-      console.error('Error fetching mosques via Gemini:', error);
+      console.error("Error fetching mosques from Overpass:", error);
       setMosques([]);
     } finally {
       setLoading(false);
@@ -289,7 +282,7 @@ export default function Mosques() {
   const prayerNames = ['Fajr', 'Chourouq', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
   return (
-    <div className="flex-1 bg-[#0d1a14] relative flex flex-col overflow-hidden font-sans" style={{ minHeight: 0 }}>
+    <div className="flex-1 bg-[#0d1a14] relative h-screen flex flex-col overflow-hidden font-sans">
       <Header className="bg-transparent border-none" leftIcon="arrow_back" onLeftClick={() => window.history.back()} rightIcon="my_location" onRightClick={handleLocateMe} />
 
       {/* Search bar */}
@@ -321,8 +314,8 @@ export default function Mosques() {
         ))}
       </div>
 
-      <div className="flex-1 relative z-0" style={{ minHeight: 0 }}>
-        <MapContainer center={mapCenter} zoom={13} zoomControl={false} style={{ height: '100%', width: '100%', minHeight: 0 }} className="z-0 bg-[#0d1a14]">
+      <div className="flex-1 relative z-0">
+        <MapContainer center={mapCenter} zoom={13} zoomControl={false} style={{ height: '100%', width: '100%' }} className="z-0 bg-[#0d1a14]">
             <ChangeView center={mapCenter} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -345,8 +338,8 @@ export default function Mosques() {
         </MapContainer>
 
         {/* Bottom Sheet */}
-        <div className="absolute bottom-0 left-0 right-0 z-[400] pointer-events-none flex flex-col justify-end">
-          <div className="pointer-events-auto w-full">
+        <div className="absolute bottom-0 left-0 right-0 z-[400] pointer-events-none">
+          <div className="pointer-events-auto">
             <AnimatePresence mode="wait">
               {selectedMosque ? (
                 <motion.div
@@ -502,3 +495,21 @@ export default function Mosques() {
     </div>
   );
 }
+```
+
+## Pistes de solution pour Claude
+
+1. **Pour la carte (MapContainer) :**
+   - Le conteneur parent `<div className="flex-1 relative z-0">` a bien `flex-1`, mais il faut s'assurer que son parent direct `<div className="flex-1 bg-[#0d1a14] relative h-screen flex flex-col overflow-hidden font-sans">` prend bien toute la hauteur.
+   - Parfois, dans React Leaflet, il faut forcer la hauteur de `.leaflet-container` en CSS.
+   - Ajouter `min-height: 100%` ou une hauteur fixe (ex: `h-[calc(100vh-60px)]`) au conteneur de la carte pourrait résoudre le problème.
+
+2. **Pour la liste des mosquées :**
+   - Le `motion.div` de la liste a `max-h-[45vh] overflow-y-auto`. S'il y a 5 mosquées, elles devraient s'afficher.
+   - Le problème vient probablement du fait que le conteneur parent a `pointer-events-none` et que bien que l'enfant ait `pointer-events-auto`, le z-index ou le positionnement absolu (`bottom-0`) pourrait causer un bug d'affichage (par exemple, si la hauteur du parent est 0).
+   - Il faudrait vérifier si les éléments de la liste ne sont pas cachés par un autre élément ou si la couleur du texte/fond ne les rend pas invisibles.
+   - Il y a un padding bottom `pb-7` sur le conteneur de la liste, peut-être que la liste est scrollée tout en bas par défaut ou que la hauteur calculée est incorrecte.
+
+3. **Conflit de Layout :**
+   - La page utilise `h-screen` mais elle est rendue à l'intérieur de `<Layout>` qui a aussi des styles complexes (`flex-1 flex flex-col w-full h-full overflow-hidden`). Il y a peut-être un conflit de hauteur (`h-screen` vs `h-full`) qui fait que la carte a une hauteur de 0 pixels.
+   - Essayer de remplacer `h-screen` par `h-full` dans le conteneur principal de `Mosques.tsx`.
